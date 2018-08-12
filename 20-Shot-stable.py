@@ -187,7 +187,7 @@ def calibrate_pos(detector, objects=None):
         # Update
         update_blocks.extend(objects.update(events))
         update_blocks.extend(bg.cross(display, detector.shot_coords[0], detector.shot_coords[1], 10, 10, 1, bg.green))
-        update_blocks.extend(bg.cross(display, detector.shot_coords_orig[0], detector.shot_coords_orig[1], 10, 10, 1, bg.blue))
+        update_blocks.extend(bg.cross(display, detector.shot_coords[0], detector.shot_coords[1] + top_bar_height, 10, 10, 1, bg.blue))
         pygame.display.update(update_blocks)
         update_blocks = []
 

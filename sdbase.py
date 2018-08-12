@@ -21,7 +21,7 @@ class Detector:
     shots = []
     translated_shots = []
     fired = 0
-    calibration = (0, 0)
+    calibration = (0, 20)
     threshold_pic = 0
     shot_coords = (0, 0)
     serial_data = ''
@@ -43,8 +43,8 @@ class Detector:
         self.num_saved_shots = num_saved_shots
         self.raw_image = self.take_frame()
         self.thresholded_image = pygame.Surface(self.raw_image.get_size(), 0)
-        pygame.transform.threshold(self.thresholded_image, self.raw_image, (255, 0, 0), (90, 170, 170), (0, 0, 0), 2,
-                                   self.threshold_pic, True)
+        pygame.transform.threshold(self.thresholded_image, self.raw_image,
+        (0, 0, 0), (255, 255, 255), (255, 255, 255), 2)
         self.weapon_active = weapon_active
         self.serial_port = serial_port
         self.mag_size = mag_size
@@ -107,13 +107,14 @@ class Detector:
         # Get base image
         self.raw_image = self.take_frame()
         self.thresholded_image = pygame.Surface(self.raw_image.get_size(), 0)
-        pygame.transform.threshold(self.thresholded_image, self.raw_image, (255, 0, 0), (90, 170, 170), (0, 0, 0), 2,
-                                   self.threshold_pic, True)
+        pygame.transform.threshold(self.thresholded_image, self.raw_image,
+        (0, 0, 0), (255, 255, 255), (255, 255, 255), 2)
 
-        thresholded_array = pygame.surfarray.pixels3d(self.thresholded_image)
+        thresholded_array = pygame.surfarray.pixels3d(self.raw_image)
 #        self.shot_coords = numpy.unravel_index(numpy.argmax(thresholded_array), thresholded_array.shape)
         ## EXPERIMENTAL AVERAGE POSITION!
         max_indices = numpy.where(thresholded_array == thresholded_array.max())
+        print thresholded_array.max()
         self.shot_coords = (numpy.mean(max_indices[0]), numpy.mean(max_indices[1]), numpy.mean(max_indices[2]))
 #        print str(max_indices) + " = " + str(self.shot_coords_orig) + " => " + str(self.shot_coords)
         self.shot_coords_orig = (max_indices[0].max(), max_indices[1].max(), max_indices[2].max())
@@ -135,7 +136,7 @@ class Detector:
             if self.fired == self.num_saved_shots / 2:
                 best_shot = self.recent_shot_coords[numpy.argmax(self.recent_shot_magnitudes)]
                 self.shots.append(best_shot)
-                self.translated_shots.append(self.untranslate_pixel(best_shot + self.calibration, window_corners[0], window_corners[1]))
+                self.translated_shots.append(self.untranslate_pixel(best_shot, window_corners[0], window_corners[1]))
                 self.fired = 0
                 print "fired"
 
