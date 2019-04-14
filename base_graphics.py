@@ -52,6 +52,7 @@ def cross(surface, x, y, w, h, thickness=0, colour=green):
 
 
 def split_bar(surface, y, h, texts, functions=None, params=None):
+    print "making a split bar!"
     rects = []
     for index, i in enumerate(texts):
         text = i
