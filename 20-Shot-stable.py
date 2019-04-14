@@ -10,23 +10,6 @@ import math
 
 weapon_active = True
 
-pygame.init()
-pygame.camera.init()
-
-display_width = 957
-display_height = 758
-top_bar_height = 20
-bottom_bar_height = 20
-
-display = pygame.display.set_mode((display_width, display_height))
-pygame.display.set_caption('20 Shot Test')
-clock = pygame.time.Clock()
-
-window_corners = [[0, 0], [display_width, 0],
-                  [display_width,display_height], [0, display_height]]
-base_window_corners = [[0, 0], [display_width, 0],
-                  [display_width,display_height], [0, display_height]]
-
 
 def calibrate_window(detector, objects=None):
     global window_corners
@@ -91,8 +74,21 @@ def calibrate_window(detector, objects=None):
         display.fill(bg.grey)
 
         detector.tick(events, window_corners)
-        display.blit(detector.raw_image, (0, top_bar_height))
-        update_blocks.append((0, top_bar_height, display_width, display_height - bottom_bar_height))
+
+	# Blit camera image
+	image_width = detector.raw_image.get_width()
+	image_height = detector.raw_image.get_height()
+	height_ratio = (display_height - top_bar_height - bottom_bar_height) / float(image_height)
+	width_ratio = display_width / float(image_width)
+	scale_factor = min(height_ratio, width_ratio)
+	scaled_image = pygame.transform.scale(detector.raw_image, (int(image_width * scale_factor), int(image_height * scale_factor)))
+
+	if height_ratio < width_ratio:
+		display.blit(scaled_image, ((display_width - scaled_image.get_width())/2, top_bar_height))
+	else:
+		display.blit(scaled_image, (0, top_bar_height + (display_height - top_bar_height - bottom_bar_height - scaled_image.get_height())/2))
+
+	update_blocks.append((0, top_bar_height, display_width, display_height - bottom_bar_height))
 
         # Window Lines
         update_blocks.append(pygame.draw.polygon(display, bg.green, window_corners, 2))
@@ -176,8 +172,21 @@ def calibrate_pos(detector, objects=None):
 
         # Update detector
         detector.tick(events, window_corners)
-        display.blit(detector.thresholded_image, (0, top_bar_height))
-        update_blocks.append((0, top_bar_height, display_width, display_height - bottom_bar_height))
+
+	# Blit camera image
+	image_width = detector.raw_image.get_width()
+	image_height = detector.raw_image.get_height()
+	height_ratio = (display_height - top_bar_height - bottom_bar_height) / float(image_height)
+	width_ratio = display_width / float(image_width)
+	scale_factor = min(height_ratio, width_ratio)
+	scaled_image = pygame.transform.scale(detector.raw_image, (int(image_width * scale_factor), int(image_height * scale_factor)))
+
+	if height_ratio < width_ratio:
+		display.blit(scaled_image, ((display_width - scaled_image.get_width())/2, top_bar_height))
+	else:
+		display.blit(scaled_image, (0, top_bar_height + (display_height - top_bar_height - bottom_bar_height - scaled_image.get_height())/2))
+
+	update_blocks.append((0, top_bar_height, display_width, display_height - bottom_bar_height))
 
         # Window lines
         for i in range(0, 4):
@@ -226,7 +235,7 @@ def main_loop(detector=None, objects=None):
                 detector.cam.stop()
                 quit()
             elif event.type == MOUSEBUTTONUP and not weapon_active:
-                if 20 <= event.pos[1] <= display_height - 30:
+                if top_bar_height <= event.pos[1] <= display_height - bottom_bar_height:
                     detector.shots.append(
                         (event.pos[0] + detector.calibration[0], event.pos[1] + detector.calibration[1]))
                     detector.translated_shots.append(detector.untranslate_pixel(
@@ -272,8 +281,19 @@ def main_loop(detector=None, objects=None):
             print "groupings: " + str(mm_groupings)
             print "average grouping: " + str(ave_ave_dists * 1000)
 
-        # Blit Video
-        display.blit(detector.raw_image, (0, top_bar_height))
+        # Blit Video, figuring out max resolution first
+	image_width = detector.raw_image.get_width()
+	image_height = detector.raw_image.get_height()
+	height_ratio = (display_height - top_bar_height - bottom_bar_height) / float(image_height)
+	width_ratio = display_width / float(image_width)
+	scale_factor = min(height_ratio, width_ratio)
+	scaled_image = pygame.transform.scale(detector.raw_image, (int(image_width * scale_factor), int(image_height * scale_factor)))
+
+	if height_ratio < width_ratio:
+		display.blit(scaled_image, ((display_width - scaled_image.get_width())/2, top_bar_height))
+	else:
+		display.blit(scaled_image, (0, top_bar_height + (display_height - top_bar_height - bottom_bar_height - scaled_image.get_height())/2))
+
         update_blocks.append((0, top_bar_height, display_width, display_height - bottom_bar_height))
 
         # Crosshairs
@@ -304,16 +324,27 @@ if __name__ == '__main__':
         height = float(args[2])
         dist = float(args[3])
         sim_dist = float(args[4])
+	display_width = int(args[5])
+	display_height = int(args[6])
     except IndexError:
         print "Using default arguments"
         width = 0.297
         height = 0.210
         dist = 5
         sim_dist = 200
+	
+	# Get current screen resolution
+	screenInfo = pygame.display.Info()
+	screenResolution = (screenInfo.current_w, screenInfo.current_h)
+	
+	display_width = screenResolution[0]
+	display_height = screenResolution[1]
     except ValueError:
         if args[1] == "help" or args[1] == "h":
-            print "python 20-Shot.py <width=0.297> <height=0.210> <real distance=5> <simulated distance=200>"
+            print "python 20-Shot.py <width=0.297> <height=0.210> <real distance=5> <simulated distance=200> <display width=957> <display height = 758>"
             quit()
+
+    # Window initialisation stuff
     factor = min((display_width)/width, (display_height-50)/height)
     true_height = height * factor
     true_width = width * factor
@@ -322,5 +353,23 @@ if __name__ == '__main__':
     left = (display_width - true_width) / 2
     right = (display_width + true_width) / 2
     base_window_corners = [[left, top], [right, top], [right, bottom], [left, bottom]]
+
+    pygame.init()
+    pygame.camera.init()
+
+    top_bar_height = 20
+    bottom_bar_height = 20
+
+    display = pygame.display.set_mode((display_width, display_height),)
+    pygame.display.set_caption('20 Shot Test')
+    clock = pygame.time.Clock()
+
+    window_corners = [[0, 0], [display_width, 0],
+		      [display_width,display_height], [0, display_height]]
+    base_window_corners = [[0, 0], [display_width, 0],
+    		      [display_width,display_height], [0, display_height]]
+
     window_corners = [[left, top], [right, top], [right, bottom], [left, bottom]]
+
     main_loop()
+

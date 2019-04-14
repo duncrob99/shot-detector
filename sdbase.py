@@ -61,7 +61,7 @@ class Detector:
             print "weapon inactive"
 
     def take_frame(self):
-        return pygame.transform.scale(self.cam.get_image(), self.dims)
+        return self.cam.get_image()
 
     def take_threshold(self):
         self.threshold_pic = self.take_frame()
@@ -110,11 +110,10 @@ class Detector:
         pygame.transform.threshold(self.thresholded_image, self.raw_image,
         (0, 0, 0), (255, 255, 255), (255, 255, 255), 2)
 
-        thresholded_array = pygame.surfarray.pixels3d(self.raw_image)
-#        self.shot_coords = numpy.unravel_index(numpy.argmax(thresholded_array), thresholded_array.shape)
+        thresholded_array = pygame.surfarray.pixels3d(self.thresholded_image)
+#       self.shot_coords = numpy.unravel_index(numpy.argmax(thresholded_array), thresholded_array.shape)
         ## EXPERIMENTAL AVERAGE POSITION!
         max_indices = numpy.where(thresholded_array == thresholded_array.max())
-        print thresholded_array.max()
         self.shot_coords = (numpy.mean(max_indices[0]), numpy.mean(max_indices[1]), numpy.mean(max_indices[2]))
 #        print str(max_indices) + " = " + str(self.shot_coords_orig) + " => " + str(self.shot_coords)
         self.shot_coords_orig = (max_indices[0].max(), max_indices[1].max(), max_indices[2].max())
@@ -171,7 +170,6 @@ class Detector:
                 self.serial_connection.write("ready?;")
                 serial_data = self.serial_connection.read(32)
                 if len(serial_data) > 0:
-                    print [serial_data]
                     if serial_data == "ready":
                         ready = True
 
